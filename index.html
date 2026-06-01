@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEURAL: AI Build Battle</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#070b14;--surface:#0d1526;--surface2:#131d33;--border:#1e2d4a;--border2:#2a3f62;--text:#e2e8f0;--text2:#8fa3c0;--text3:#4a6080;--gold:#f0a500;--gold2:#ffc84a;--foundation:#3b82f6;--foundation-bg:#0d1e3d;--intel:#ef4444;--intel-bg:#2d0a0a;--deploy:#22c55e;--deploy-bg:#0a2010;--align:#a855f7;--align-bg:#1a0a2e;--special:#f97316;--special-bg:#2a1000;--attack:#ef4444;--defend:#22c55e;--build:#3b82f6;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:13px;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+#app{position:relative;z-index:1;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+#title-screen{align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(59,130,246,0.08) 0%,transparent 60%);}
+.title-logo{font-size:72px;font-weight:800;letter-spacing:-2px;color:var(--text);text-shadow:0 0 60px rgba(59,130,246,0.4);line-height:1;}
+.title-sub{font-family:'Space Mono',monospace;color:var(--gold);font-size:13px;letter-spacing:4px;text-transform:uppercase;margin-top:8px;}
+.title-suits{font-size:28px;color:var(--text3);margin:24px 0;letter-spacing:16px;}
+.title-suits span:nth-child(1){color:var(--foundation);}
+.title-suits span:nth-child(2){color:var(--intel);}
+.title-suits span:nth-child(3){color:var(--deploy);}
+.title-suits span:nth-child(4){color:var(--align);}
+.btn{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:12px 32px;border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer;transition:all 0.2s;outline:none;}
+.btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(240,165,0,0.05);}
+.btn-primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:700;}
+.btn-primary:hover{background:var(--gold2);color:var(--bg);}
+.btn-sm{padding:6px 14px;font-size:10px;}
+.btn-danger{border-color:var(--attack);color:var(--attack);}
+.btn-danger:hover{background:rgba(239,68,68,0.1);}
+.mode-cards{display:flex;gap:16px;margin-top:16px;}
+.mode-card{border:1px solid var(--border);background:var(--surface);padding:24px;cursor:pointer;width:200px;transition:all 0.2s;text-align:center;}
+.mode-card:hover{border-color:var(--gold);}
+.mode-card h3{color:var(--gold);font-size:14px;margin-bottom:8px;}
+.mode-card p{color:var(--text2);font-size:11px;line-height:1.5;}
+#game-screen{padding:12px;gap:8px;}
+.game-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1px solid var(--border);background:var(--surface);}
+.game-logo{font-size:18px;font-weight:800;letter-spacing:-0.5px;}
+.turn-info{font-family:'Space Mono',monospace;font-size:11px;color:var(--gold);}
+.phase-badge{font-family:'Space Mono',monospace;font-size:10px;padding:4px 10px;border:1px solid var(--gold);color:var(--gold);letter-spacing:1px;}
+.game-main{display:grid;grid-template-columns:1fr 200px 1fr;gap:8px;flex:1;}
+.player-area{display:flex;flex-direction:column;gap:8px;}
+.player-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text2);padding:4px 0;}
+.player-label.active-player{color:var(--gold);}
+.build-zone{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.build-slot{border:1px dashed var(--border2);min-height:90px;padding:8px;display:flex;flex-direction:column;gap:4px;transition:all 0.2s;position:relative;}
+.build-slot.foundation-slot{border-color:rgba(59,130,246,0.3);}
+.build-slot.intel-slot{border-color:rgba(239,68,68,0.3);}
+.build-slot.deploy-slot{border-color:rgba(34,197,94,0.3);}
+.build-slot.align-slot{border-color:rgba(168,85,247,0.3);}
+.build-slot.drop-target{border-style:solid;border-color:var(--gold);background:rgba(240,165,0,0.05);}
+.slot-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:1px;opacity:0.5;}
+.foundation-slot .slot-label{color:var(--foundation);}
+.intel-slot .slot-label{color:var(--intel);}
+.deploy-slot .slot-label{color:var(--deploy);}
+.align-slot .slot-label{color:var(--align);}
+.slot-empty{font-size:10px;color:var(--text3);margin-top:auto;}
+.slot-card{flex:1;display:flex;flex-direction:column;gap:2px;}
+.slot-card-name{font-size:10px;font-weight:700;line-height:1.2;}
+.slot-card-power{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;line-height:1;}
+.slot-card-type{font-family:'Space Mono',monospace;font-size:8px;opacity:0.6;letter-spacing:1px;}
+.breakthrough-badge{font-size:8px;background:var(--gold);color:var(--bg);padding:1px 4px;font-family:'Space Mono',monospace;width:fit-content;}
+.combo-active{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px var(--gold);}
+.center-col{display:flex;flex-direction:column;gap:8px;align-items:center;}
+.deck-area{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.deck-pile{width:70px;height:96px;border:1px solid var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;cursor:pointer;transition:all 0.2s;position:relative;}
+.deck-pile::before{content:'';position:absolute;inset:3px;border:1px solid var(--border);}
+.deck-pile:hover{border-color:var(--gold);}
+.deck-count{font-family:'Space Mono',monospace;font-size:18px;color:var(--text2);}
+.deck-label{font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:1px;}
+.discard-pile{width:70px;height:96px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;}
+.discard-label{font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:1px;}
+.tokens-display{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.tokens-label{font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:1px;}
+.tokens-row{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;max-width:80px;}
+.token{width:12px;height:12px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px rgba(240,165,0,0.4);}
+.token.empty{background:var(--surface2);border:1px solid var(--border);box-shadow:none;}
+.score-display{text-align:center;border:1px solid var(--border);background:var(--surface);padding:8px 12px;}
+.score-num{font-size:28px;font-weight:800;line-height:1;}
+.score-label{font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:1px;}
+.hand-area{border:1px solid var(--border);background:var(--surface);padding:8px;}
+.hand-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--text2);letter-spacing:2px;margin-bottom:8px;}
+.hand-cards{display:flex;flex-wrap:wrap;gap:6px;}
+.card{width:68px;border:1px solid var(--border2);background:var(--surface2);padding:6px;cursor:pointer;transition:all 0.15s;position:relative;user-select:none;flex-shrink:0;}
+.card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+.card.selected{border-color:var(--gold);box-shadow:0 0 12px rgba(240,165,0,0.3);transform:translateY(-6px);}
+.card.foundation{border-color:rgba(59,130,246,0.5);}
+.card.intelligence{border-color:rgba(239,68,68,0.5);}
+.card.deployment{border-color:rgba(34,197,94,0.5);}
+.card.alignment{border-color:rgba(168,85,247,0.5);}
+.card.special{border-color:rgba(249,115,22,0.5);}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.card-suit{font-size:12px;}
+.card-power{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;}
+.foundation .card-power{color:var(--foundation);}
+.intelligence .card-power{color:var(--intel);}
+.deployment .card-power{color:var(--deploy);}
+.alignment .card-power{color:var(--align);}
+.special .card-power{color:var(--special);}
+.card-name{font-size:9px;font-weight:700;line-height:1.2;margin:4px 0 2px;}
+.card-type-badge{font-family:'Space Mono',monospace;font-size:7px;padding:1px 4px;letter-spacing:0.5px;width:fit-content;}
+.type-build{background:rgba(59,130,246,0.2);color:var(--foundation);}
+.type-attack{background:rgba(239,68,68,0.2);color:var(--attack);}
+.type-defend{background:rgba(34,197,94,0.2);color:var(--deploy);}
+.type-special{background:rgba(249,115,22,0.2);color:var(--special);}
+.card-def{font-size:7.5px;color:var(--text2);line-height:1.4;margin-top:4px;display:none;}
+.card:hover .card-def{display:block;}
+.action-panel{border:1px solid var(--border);background:var(--surface);padding:10px;}
+.action-title{font-family:'Space Mono',monospace;font-size:9px;color:var(--text2);letter-spacing:2px;margin-bottom:8px;}
+.action-btns{display:flex;flex-direction:column;gap:6px;}
+.action-btn{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;padding:8px 12px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;text-align:left;transition:all 0.15s;text-transform:uppercase;}
+.action-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);}
+.action-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.log-area{border:1px solid var(--border);background:var(--surface);padding:8px;height:110px;overflow-y:auto;}
+.log-title{font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:2px;margin-bottom:6px;}
+.log-entry{font-family:'Space Mono',monospace;font-size:9px;color:var(--text2);line-height:1.6;border-left:2px solid var(--border);padding-left:6px;margin-bottom:2px;}
+.log-entry.player{border-color:var(--foundation);color:var(--text);}
+.log-entry.ai{border-color:var(--intel);}
+.log-entry.system{border-color:var(--gold);color:var(--gold);}
+.log-entry.combo{border-color:var(--gold);color:var(--gold2);}
+.log-entry.attack{border-color:var(--attack);color:var(--attack);}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;align-items:center;justify-content:center;}
+.modal-overlay.active{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);padding:24px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto;}
+.modal h2{font-size:20px;margin-bottom:8px;}
+.modal p{color:var(--text2);font-size:12px;line-height:1.6;margin-bottom:16px;}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+.target-select{display:flex;flex-direction:column;gap:8px;}
+.target-slot-btn{font-family:'Space Mono',monospace;font-size:10px;padding:10px 14px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer;text-align:left;transition:all 0.15s;}
+.target-slot-btn:hover{border-color:var(--attack);color:var(--attack);}
+.target-slot-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.card-detail{border:1px solid var(--border2);background:var(--surface2);padding:12px;margin-bottom:16px;}
+.card-detail-name{font-size:16px;font-weight:700;margin-bottom:4px;}
+.card-detail-meta{font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:8px;letter-spacing:1px;}
+.card-detail-def{font-size:12px;color:var(--text2);line-height:1.6;font-style:italic;}
+#win-screen{align-items:center;justify-content:center;text-align:center;}
+.win-title{font-size:56px;font-weight:800;color:var(--gold);text-shadow:0 0 40px rgba(240,165,0,0.4);}
+.win-sub{font-size:18px;color:var(--text2);margin:8px 0 24px;}
+.win-stats{display:flex;gap:24px;justify-content:center;margin-bottom:32px;}
+.win-stat{text-align:center;}
+.win-stat-num{font-size:32px;font-weight:800;color:var(--gold);}
+.win-stat-label{font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:1px;}
+.combo-flash{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--gold);color:var(--bg);padding:12px 24px;font-size:14px;font-weight:800;letter-spacing:2px;z-index:200;pointer-events:none;opacity:0;transition:opacity 0.3s;}
+.combo-flash.show{opacity:1;}
+.attack-flash{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--attack);padding:12px 24px;font-size:24px;font-weight:800;letter-spacing:4px;z-index:200;pointer-events:none;opacity:0;transition:opacity 0.3s;text-shadow:0 0 20px var(--attack);}
+.attack-flash.show{opacity:1;}
+.status-bar{display:flex;gap:8px;align-items:center;padding:6px 12px;background:var(--surface);border:1px solid var(--border);font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);flex-wrap:wrap;}
+.status-item{display:flex;gap:4px;align-items:center;}
+.status-val{color:var(--gold);}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--border2);}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="title-screen" class="screen active">
+  <div style="text-align:center;padding:40px 20px;">
+    <div class="title-logo">NEURAL</div>
+    <div class="title-sub">AI Build Battle</div>
+    <div class="title-suits"><span>♠</span> <span>♥</span> <span>♦</span> <span>♣</span></div>
+    <p style="color:var(--text2);font-size:12px;max-width:400px;margin:0 auto 24px;line-height:1.7;">Build a complete AI system. Attack your opponent's. Race to Power 20.<br>Learn how AI actually works along the way.</p>
+    <div class="mode-cards" style="justify-content:center;">
+      <div class="mode-card" onclick="startGame('ai')"><h3>VS AI</h3><p>Play against an AI opponent. Best for learning the game.</p></div>
+      <div class="mode-card" onclick="startGame('local')"><h3>LOCAL 2P</h3><p>Pass and play with a friend on the same screen.</p></div>
+    </div>
+    <div style="margin-top:24px;"><button class="btn btn-sm" onclick="showRules()">How to Play</button></div>
+    <div style="margin-top:40px;font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;">54 CARDS · 4 SUITS · 8 COMBOS · 2 JOKERS</div>
+  </div>
+</div>
+
+<div id="game-screen" class="screen">
+  <div class="game-header">
+    <div class="game-logo">NEURAL <span style="color:var(--gold);font-size:11px;">AI Build Battle</span></div>
+    <div id="turn-info" class="turn-info">TURN 1 · PLAYER'S TURN</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div id="phase-badge" class="phase-badge">CHOOSE ACTION</div>
+      <button class="btn btn-sm" onclick="goToTitle()">MENU</button>
+    </div>
+  </div>
+  <div class="status-bar">
+    <div class="status-item">ACTIONS LEFT: <span id="actions-left" class="status-val">2</span></div>
+    <div class="status-item">· DECK: <span id="deck-count-s" class="status-val">54</span></div>
+    <div class="status-item">· YOUR TOKENS: <span id="p-tokens-s" class="status-val">4</span></div>
+    <div class="status-item">· AI TOKENS: <span id="ai-tokens-s" class="status-val">4</span></div>
+    <div id="survival-notice" class="status-item" style="display:none;">· <span style="color:var(--attack);">⚠ SURVIVAL ROUND ACTIVE</span></div>
+  </div>
+  <div class="game-main">
+    <div class="player-area" id="player-area">
+      <div class="player-label active-player" id="p-label">◆ YOUR SYSTEM</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div class="score-display" style="flex:1;"><div id="p-score" class="score-num" style="color:var(--foundation);">0</div><div class="score-label">POWER SCORE / 20</div></div>
+        <div class="tokens-display"><div class="tokens-label">STABILITY</div><div id="p-tokens" class="tokens-row"></div></div>
+      </div>
+      <div class="build-zone" id="player-build-zone">
+        <div class="build-slot foundation-slot" id="p-slot-foundation" onclick="handleSlotClick('player','foundation')"><div class="slot-label">♠ FOUNDATION</div><div class="slot-empty" id="p-empty-foundation">EMPTY</div></div>
+        <div class="build-slot intel-slot" id="p-slot-intelligence" onclick="handleSlotClick('player','intelligence')"><div class="slot-label">♥ INTELLIGENCE</div><div class="slot-empty" id="p-empty-intelligence">EMPTY</div></div>
+        <div class="build-slot deploy-slot" id="p-slot-deployment" onclick="handleSlotClick('player','deployment')"><div class="slot-label">♦ DEPLOYMENT</div><div class="slot-empty" id="p-empty-deployment">EMPTY</div></div>
+        <div class="build-slot align-slot" id="p-slot-alignment" onclick="handleSlotClick('player','alignment')"><div class="slot-label">♣ ALIGNMENT</div><div class="slot-empty" id="p-empty-alignment">EMPTY</div></div>
+      </div>
+    </div>
+    <div class="center-col">
+      <div class="deck-area">
+        <div class="deck-pile" onclick="doAction('draw')" title="Draw a card">
+          <div id="deck-count" class="deck-count">54</div>
+          <div class="deck-label">DRAW</div>
+        </div>
+        <div class="discard-pile">
+          <div class="discard-label">DISCARD</div>
+          <div id="discard-count" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text3);">0</div>
+        </div>
+      </div>
+      <div class="action-panel" style="width:100%;">
+        <div class="action-title">// ACTIONS</div>
+        <div class="action-btns">
+          <button class="action-btn" id="btn-draw" onclick="doAction('draw')">① Draw Card</button>
+          <button class="action-btn" id="btn-build" onclick="doAction('build')">② Build</button>
+          <button class="action-btn" id="btn-attack" onclick="doAction('attack')">③ Attack</button>
+          <button class="action-btn" id="btn-defend" onclick="doAction('defend')" disabled>④ Defend</button>
+          <button class="action-btn" onclick="endTurn()" style="border-color:var(--gold);color:var(--gold);margin-top:4px;">END TURN →</button>
+        </div>
+      </div>
+      <div class="log-area" style="width:100%;">
+        <div class="log-title">// BATTLE LOG</div>
+        <div id="log"></div>
+      </div>
+    </div>
+    <div class="player-area" id="ai-area">
+      <div class="player-label" id="ai-label">◆ AI SYSTEM</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div class="score-display" style="flex:1;"><div id="ai-score" class="score-num" style="color:var(--intel);">0</div><div class="score-label">POWER SCORE / 20</div></div>
+        <div class="tokens-display"><div class="tokens-label">STABILITY</div><div id="ai-tokens" class="tokens-row"></div></div>
+      </div>
+      <div class="build-zone" id="ai-build-zone">
+        <div class="build-slot foundation-slot" id="ai-slot-foundation"><div class="slot-label">♠ FOUNDATION</div><div class="slot-empty" id="ai-empty-foundation">EMPTY</div></div>
+        <div class="build-slot intel-slot" id="ai-slot-intelligence"><div class="slot-label">♥ INTELLIGENCE</div><div class="slot-empty" id="ai-empty-intelligence">EMPTY</div></div>
+        <div class="build-slot deploy-slot" id="ai-slot-deployment"><div class="slot-label">♦ DEPLOYMENT</div><div class="slot-empty" id="ai-empty-deployment">EMPTY</div></div>
+        <div class="build-slot align-slot" id="ai-slot-alignment"><div class="slot-label">♣ ALIGNMENT</div><div class="slot-empty" id="ai-empty-alignment">EMPTY</div></div>
+      </div>
+      <div style="border:1px solid var(--border);background:var(--surface);padding:8px;">
+        <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;margin-bottom:6px;">AI HAND (FACE DOWN)</div>
+        <div id="ai-hand-back" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="hand-area">
+    <div class="hand-label">YOUR HAND — Click card to select, then choose action · <span id="selected-card-name" style="color:var(--gold);">No card selected</span></div>
+    <div id="player-hand" class="hand-cards"></div>
+  </div>
+</div>
+
+<div id="win-screen" class="screen">
+  <div style="padding:40px 20px;text-align:center;">
+    <div id="win-title" class="win-title">VICTORY</div>
+    <div id="win-sub" class="win-sub">Your AI system achieved operational superiority.</div>
+    <div class="win-stats">
+      <div class="win-stat"><div id="win-turns" class="win-stat-num">—</div><div class="win-stat-label">TURNS</div></div>
+      <div class="win-stat"><div id="win-power" class="win-stat-num">—</div><div class="win-stat-label">FINAL POWER</div></div>
+      <div class="win-stat"><div id="win-combos" class="win-stat-num">—</div><div class="win-stat-label">COMBOS HIT</div></div>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button class="btn btn-primary" onclick="startGame('ai')">PLAY AGAIN</button>
+      <button class="btn" onclick="goToTitle()">MAIN MENU</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay"><div class="modal" id="modal-content"></div></div>
+<div class="modal-overlay" id="rules-overlay">
+  <div class="modal" style="max-width:560px;">
+    <h2 style="color:var(--gold);margin-bottom:16px;">HOW TO PLAY</h2>
+    <p><strong style="color:var(--text);">Objective:</strong> Fill all 4 Build Zone slots with a combined Power Score of 20+, then survive 1 Survival Round.</p>
+    <p><strong style="color:var(--text);">On your turn, take 2 actions:</strong><br>
+    <span style="color:var(--foundation);">DRAW</span> — Take a card from the deck (max 9 in hand)<br>
+    <span style="color:var(--foundation);">BUILD</span> — Select a card, click Build, then click a matching slot<br>
+    <span style="color:var(--attack);">ATTACK</span> — Select an attack card, click Attack, choose opponent's slot<br>
+    <span style="color:var(--deploy);">DEFEND</span> — Only available when AI attacks you</p>
+    <p><strong style="color:var(--text);">Suits:</strong> ♠ Foundation (blue) · ♥ Intelligence (red) · ♦ Deployment (green) · ♣ Alignment (purple)</p>
+    <p><strong style="color:var(--text);">Combos:</strong> Assemble both cards of a pair in your Build Zone for a bonus + 1 Stability Token.</p>
+    <p><strong style="color:var(--gold);">⚡ HALLUCINATION:</strong> Removes any card regardless of power. Returns to deck after use.</p>
+    <p><strong style="color:var(--gold);">🔥 BREAKTHROUGH:</strong> Attaches to any Build Zone card. +2 Power permanently.</p>
+    <p><strong style="color:var(--text);">Stability Tokens:</strong> Spend 2 to block an attack without a defense card.</p>
+    <div class="modal-btns"><button class="btn btn-primary" onclick="closeRules()">GOT IT</button></div>
+  </div>
+</div>
+<div class="combo-flash" id="combo-flash">⚡ COMBO ACTIVATED</div>
+<div class="attack-flash" id="attack-flash">HALLUCINATION</div>
+
+<script>
+const CARDS=[
+  {id:'f-a',suit:'foundation',rank:'A',name:'Data',power:1,type:'build',era:'Always',def:'The raw material of AI — observations, records, and signals the system learns from.'},
+  {id:'f-2',suit:'foundation',rank:'2',name:'Labels',power:1,type:'build',era:'1950s+',def:'Human-assigned tags that tell a model the correct answer during training.'},
+  {id:'f-3',suit:'foundation',rank:'3',name:'Features',power:1,type:'build',era:'1960s+',def:'Measurable properties extracted from raw data to represent examples in a model.'},
+  {id:'f-4',suit:'foundation',rank:'4',name:'Supervised Learning',power:2,type:'build',era:'1950s+',def:'Training a model on labeled examples so it can predict outputs for new inputs.'},
+  {id:'f-5',suit:'foundation',rank:'5',name:'Unsupervised Learning',power:2,type:'build',era:'1960s+',def:'Finding hidden patterns in data with no labels, no right answers, no guidance.'},
+  {id:'f-6',suit:'foundation',rank:'6',name:'Reinforcement Learning',power:2,type:'build',era:'1970s+',def:'Teaching an agent by rewarding good decisions and penalizing bad ones over time.'},
+  {id:'f-7',suit:'foundation',rank:'7',name:'Neural Networks',power:3,type:'build',era:'1980s+',def:'Layers of connected mathematical nodes that learn complex patterns from data.',combo:'deep-learning'},
+  {id:'f-8',suit:'foundation',rank:'8',name:'Deep Learning',power:3,type:'build',era:'2006+',def:'Neural networks with many layers that learn increasingly abstract representations of data.',combo:'neural-networks'},
+  {id:'f-9',suit:'foundation',rank:'9',name:'Overfitting',power:3,type:'attack',era:'1990s+',def:'When a model memorizes training data so precisely it fails on new, unseen examples.',attackEffect:'discard-highest'},
+  {id:'f-10',suit:'foundation',rank:'10',name:'Transfer Learning',power:3,type:'build',era:'2000s+',def:'Reusing knowledge from one trained model to accelerate learning on a new task.'},
+  {id:'f-j',suit:'foundation',rank:'J',name:'Foundation Model',power:4,type:'build',era:'2018+',def:'A large model trained on broad data that can be adapted to many downstream tasks.'},
+  {id:'f-q',suit:'foundation',rank:'Q',name:'Transformer Architecture',power:5,type:'build',era:'2017+',def:'The attention-based architecture that enabled the current generation of large language models.',combo:'large-language-model'},
+  {id:'f-k',suit:'foundation',rank:'K',name:'Large Language Model',power:5,type:'build',era:'2020+',def:'A massive neural network trained on enormous text datasets that predicts and generates human language.',combo:'transformer-architecture'},
+  {id:'i-a',suit:'intelligence',rank:'A',name:'Pattern Recognition',power:1,type:'build',era:'1950s+',def:'Identifying recurring structures, regularities, or signatures within data.'},
+  {id:'i-2',suit:'intelligence',rank:'2',name:'Classification',power:1,type:'build',era:'1960s+',def:'Assigning an input to one of a predefined set of categories.'},
+  {id:'i-3',suit:'intelligence',rank:'3',name:'Prediction',power:1,type:'build',era:'1960s+',def:'Estimating a future or unknown value based on learned patterns.'},
+  {id:'i-4',suit:'intelligence',rank:'4',name:'Computer Vision',power:2,type:'build',era:'1960s+',def:'Enabling machines to interpret and understand visual information from images and video.'},
+  {id:'i-5',suit:'intelligence',rank:'5',name:'NLP',power:2,type:'build',era:'1950s+',def:'Natural Language Processing: enabling machines to read, understand, and respond to human language.'},
+  {id:'i-6',suit:'intelligence',rank:'6',name:'Reasoning',power:2,type:'build',era:'2020s+',def:'Drawing logical conclusions by combining known facts and applying inference rules.'},
+  {id:'i-7',suit:'intelligence',rank:'7',name:'Multimodal AI',power:3,type:'build',era:'2021+',def:'Processing and integrating multiple data types: text, images, audio, and video together.'},
+  {id:'i-8',suit:'intelligence',rank:'8',name:'Chain of Thought',power:3,type:'build',era:'2022+',def:'Breaking a problem into sequential reasoning steps to improve accuracy on complex tasks.'},
+  {id:'i-9',suit:'intelligence',rank:'9',name:'Emergent Behavior',power:3,type:'build',era:'2020s+',def:'Unexpected capabilities that appear in large models not present in smaller versions.'},
+  {id:'i-10',suit:'intelligence',rank:'10',name:'Self-Reflection',power:3,type:'build',era:'2023+',def:'A model evaluating and critiquing its own outputs before returning a final answer.'},
+  {id:'i-j',suit:'intelligence',rank:'J',name:'AGI',power:4,type:'build',era:'Theoretical',def:'Artificial General Intelligence: a system that can perform any intellectual task a human can.'},
+  {id:'i-q',suit:'intelligence',rank:'Q',name:'World Model',power:5,type:'build',era:'2020s+',def:'An internal representation of the environment that allows an AI to simulate outcomes before acting.',combo:'autonomous-agent'},
+  {id:'i-k',suit:'intelligence',rank:'K',name:'Recursive Self-Improvement',power:5,type:'build',era:'Frontier',def:'An AI system that iteratively improves its own architecture, training process, or reasoning capabilities.',combo:'agentic-infrastructure'},
+  {id:'d-a',suit:'deployment',rank:'A',name:'API',power:1,type:'build',era:'1990s+',def:'An interface that lets external software send requests to and receive responses from an AI model.'},
+  {id:'d-2',suit:'deployment',rank:'2',name:'Fine-Tuning',power:1,type:'build',era:'2010s+',def:'Adapting a pre-trained model to a specific task by training further on a smaller dataset.'},
+  {id:'d-3',suit:'deployment',rank:'3',name:'Prompt Engineering',power:1,type:'build',era:'2020+',def:'Designing input instructions that guide an AI model toward more accurate or useful outputs.'},
+  {id:'d-4',suit:'deployment',rank:'4',name:'Generation',power:2,type:'build',era:'2014+',def:'An AI system producing new content — text, images, code — that was not in the training data.',combo:'rag'},
+  {id:'d-5',suit:'deployment',rank:'5',name:'RAG',power:2,type:'build',era:'2020+',def:'Retrieval-Augmented Generation: a language model combined with live document search for accuracy.',combo:'generation'},
+  {id:'d-6',suit:'deployment',rank:'6',name:'AI Assistant',power:2,type:'build',era:'2018+',def:'A conversational AI system that responds to user requests, answers questions, and completes tasks.'},
+  {id:'d-7',suit:'deployment',rank:'7',name:'Tool Use',power:3,type:'build',era:'2023+',def:'An AI system that calls external tools — calculators, browsers, APIs — to extend its capabilities.',combo:'autonomous-agent'},
+  {id:'d-8',suit:'deployment',rank:'8',name:'Prompt Injection',power:3,type:'attack',era:'2023+',def:'A technique that manipulates an AI system by embedding malicious instructions in its input.',attackEffect:'discard-random'},
+  {id:'d-9',suit:'deployment',rank:'9',name:'Autonomous Agent',power:3,type:'build',era:'2022+',def:'An AI system that pursues goals independently by planning, taking actions, and observing results.',combo:'world-model tool-use'},
+  {id:'d-10',suit:'deployment',rank:'10',name:'AI Pipeline',power:3,type:'build',era:'2022+',def:'A structured sequence of data processing steps from input ingestion to final model output.'},
+  {id:'d-j',suit:'deployment',rank:'J',name:'Multi-Agent System',power:4,type:'build',era:'2023+',def:'Multiple AI agents collaborating to accomplish tasks no single agent could handle alone.'},
+  {id:'d-q',suit:'deployment',rank:'Q',name:'Embodied AI',power:5,type:'build',era:'2020s+',def:'An AI system in a physical body — a robot — that perceives and acts in the real world.'},
+  {id:'d-k',suit:'deployment',rank:'K',name:'Agentic Infrastructure',power:5,type:'build',era:'2024+',def:'Enterprise-scale systems that deploy, monitor, and coordinate thousands of autonomous AI agents.',combo:'recursive-self-improvement'},
+  {id:'a-a',suit:'alignment',rank:'A',name:'Bias',power:1,type:'attack',era:'Always',def:'Systematic error in a model\'s outputs caused by skewed training data or flawed assumptions.',attackEffect:'remove-low'},
+  {id:'a-2',suit:'alignment',rank:'2',name:'Fairness',power:1,type:'build',era:'2010s+',def:'Designing AI systems that produce equitable outcomes across different groups.'},
+  {id:'a-3',suit:'alignment',rank:'3',name:'Transparency',power:1,type:'build',era:'2010s+',def:'Making an AI system\'s decisions, data sources, and processes visible and understandable.'},
+  {id:'a-4',suit:'alignment',rank:'4',name:'Explainability',power:2,type:'defend',era:'2017+',def:'The ability to describe in plain language why an AI system produced a particular output.',defendPower:3},
+  {id:'a-5',suit:'alignment',rank:'5',name:'Privacy',power:2,type:'build',era:'2015+',def:'Protecting individuals from having personal data used in ways they did not consent to.'},
+  {id:'a-6',suit:'alignment',rank:'6',name:'Consent',power:2,type:'build',era:'2015+',def:'Ensuring that data collection and model training is authorized by the people it affects.'},
+  {id:'a-7',suit:'alignment',rank:'7',name:'Regulation',power:2,type:'defend',era:'2018+',def:'Government and institutional frameworks that constrain how AI may be built and deployed.',defendPower:2},
+  {id:'a-8',suit:'alignment',rank:'8',name:'Red Teaming',power:3,type:'defend',era:'2020s+',def:'Deliberately attacking your own AI system to find vulnerabilities before adversaries do.',defendPower:99},
+  {id:'a-9',suit:'alignment',rank:'9',name:'RLHF',power:3,type:'build',era:'2022+',def:'Reinforcement Learning from Human Feedback: training a model to align with human preferences.',combo:'human-ai-collaboration'},
+  {id:'a-10',suit:'alignment',rank:'10',name:'AI Safety',power:4,type:'defend',era:'2014+',def:'Research and practices designed to ensure advanced AI systems remain beneficial and controllable.',defendPower:99,specialDefend:'return'},
+  {id:'a-j',suit:'alignment',rank:'J',name:'Responsible AI',power:4,type:'build',era:'2020s+',def:'Frameworks and practices ensuring AI systems are developed and deployed ethically and accountably.',combo:'ai-safety'},
+  {id:'a-q',suit:'alignment',rank:'Q',name:'Ethics Framework',power:5,type:'defend',era:'2020s+',def:'A structured set of principles guiding the design of AI systems to avoid harm and promote good.',defendPower:99,specialDefend:'token'},
+  {id:'a-k',suit:'alignment',rank:'K',name:'Human-AI Collaboration',power:5,type:'build',era:'2020s+',def:'Systems designed so AI augments rather than replaces human judgment, skill, and agency.',combo:'rlhf'},
+  {id:'j-hallucination',suit:'special',rank:'★',name:'HALLUCINATION',power:5,type:'attack',era:'Ongoing',def:'Removes any card from any opponent\'s Build Zone regardless of Power. Returns to deck after use.',attackEffect:'hallucination'},
+  {id:'j-breakthrough',suit:'special',rank:'★',name:'BREAKTHROUGH',power:0,type:'special',era:'Any',def:'Attach to any card in your Build Zone. That card gains +2 Power and is immune to Power 1-2 attacks.'},
+];
+const COMBOS=[
+  {cards:['Neural Networks','Deep Learning'],bonus:'draw1',label:'Neural Stack',desc:'Draw 1 card'},
+  {cards:['Transformer Architecture','Large Language Model'],bonus:'immune1',label:'LLM Foundation',desc:'Immune to attacks 1 round'},
+  {cards:['Generation','RAG'],bonus:'token1',label:'Grounded Generation',desc:'Gain 1 Stability Token'},
+  {cards:['Tool Use','Autonomous Agent'],bonus:'draw2',label:'Capable Agent',desc:'Draw 2 cards'},
+  {cards:['World Model','Autonomous Agent'],bonus:'freeattack',label:'Strategic Agent',desc:'Next attack free'},
+  {cards:['RLHF','Human-AI Collaboration'],bonus:'token2',label:'Perfect Alignment',desc:'Gain 2 Stability Tokens'},
+  {cards:['AI Safety','Responsible AI'],bonus:'defboost',label:'Safety Framework',desc:'Defense +1 Power'},
+  {cards:['Recursive Self-Improvement','Agentic Infrastructure'],bonus:'threshold3',label:'The Singularity',desc:'Win threshold −3'},
+];
+let G={},selectedCard=null,pendingAttackCard=null;
+function initGame(mode){
+  const deck=shuffle([...CARDS]);
+  G={mode,turn:1,currentPlayer:'player',actionsLeft:2,drawPile:deck,discardPile:[],survivalRound:false,survivalTriggeredBy:null,gameOver:false,winner:null,totalCombosHit:0,
+    players:{
+      player:{hand:[],buildZone:{foundation:null,intelligence:null,deployment:null,alignment:null},tokens:4,activeComboNames:[],breakthroughSlot:null,immuneRounds:0,defBoost:false,freeAttack:false,thresholdBonus:0,completedFirstTime:false},
+      ai:{hand:[],buildZone:{foundation:null,intelligence:null,deployment:null,alignment:null},tokens:4,activeComboNames:[],breakthroughSlot:null,immuneRounds:0,defBoost:false,freeAttack:false,thresholdBonus:0,completedFirstTime:false}
+    },log:[]};
+  for(let i=0;i<7;i++){dealCard('player');dealCard('ai');}
+  renderAll();
+  addLog('system','NEURAL INITIALIZED. Your turn. Take 2 actions.');
+}
+function dealCard(p){if(G.drawPile.length===0)reshuffleDiscard();if(G.drawPile.length>0)G.players[p].hand.push(G.drawPile.pop());}
+function reshuffleDiscard(){const hj=G.discardPile.filter(c=>c.id==='j-hallucination');G.drawPile=shuffle(G.discardPile.filter(c=>c.id!=='j-hallucination'));G.discardPile=hj;addLog('system','Deck reshuffled.');}
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+function getPowerScore(p){let s=0;for(const slot of Object.values(G.players[p].buildZone)){if(slot){let pw=slot.power;if(G.players[p].breakthroughSlot===slot.id)pw+=2;s+=pw;}}return s;}
+function getWinThreshold(p){return 20-G.players[p].thresholdBonus;}
+function isBuildZoneComplete(p){const bz=G.players[p].buildZone;return bz.foundation&&bz.intelligence&&bz.deployment&&bz.alignment;}
+function checkCombos(p){
+  const bz=G.players[p].buildZone;const inZone=Object.values(bz).filter(Boolean).map(c=>c.name);
+  const prev=[...G.players[p].activeComboNames];const now=[];
+  for(const combo of COMBOS){if(combo.cards.every(c=>inZone.includes(c)))now.push(combo.label);}
+  G.players[p].activeComboNames=now;
+  for(const label of now){if(!prev.includes(label))triggerCombo(p,label);}
+  for(const label of prev){if(!now.includes(label)){if(label==='LLM Foundation')G.players[p].immuneRounds=0;if(label==='Safety Framework')G.players[p].defBoost=false;if(label==='The Singularity')G.players[p].thresholdBonus=0;if(label==='Strategic Agent')G.players[p].freeAttack=false;}}
+}
+function triggerCombo(p,label){
+  G.totalCombosHit++;const combo=COMBOS.find(c=>c.label===label);const who=p==='player'?'You':'AI';
+  addLog('combo',who+' activated combo: '+label+' → '+combo.desc);showComboFlash(label);
+  G.players[p].tokens+=1;
+  switch(combo.bonus){case 'draw1':dealCard(p);break;case 'draw2':dealCard(p);dealCard(p);break;case 'token1':G.players[p].tokens+=1;break;case 'token2':G.players[p].tokens+=2;break;case 'immune1':G.players[p].immuneRounds=2;break;case 'freeattack':G.players[p].freeAttack=true;break;case 'defboost':G.players[p].defBoost=true;break;case 'threshold3':G.players[p].thresholdBonus=3;break;}
+}
+function selectCard(cardId,pname){selectedCard={cardId,pname};renderHand();const card=G.players[pname].hand.find(c=>c.id===cardId);if(card)document.getElementById('selected-card-name').textContent=card.name+' ('+suitSymbol(card.suit)+' Power '+card.power+')';}
+function doAction(action){
+  if(G.actionsLeft<=0){addLog('system','No actions left.');return;}
+  if(G.currentPlayer!=='player')return;
+  if(action==='draw'){if(G.players.player.hand.length>=9){addLog('system','Hand full.');return;}dealCard('player');G.actionsLeft--;addLog('player','You drew a card.');checkEndTurn();renderAll();return;}
+  if(action==='build'){if(!selectedCard){addLog('system','Select a card first.');return;}const card=G.players.player.hand.find(c=>c.id===selectedCard.cardId);if(!card)return;if(card.type==='attack'){addLog('system','Use ATTACK for attack cards.');return;}if(card.type==='defend'){addLog('system','Defense cards are played in response to attacks.');return;}if(card.type==='special'){handleBreakthrough(card);return;}highlightBuildSlots(card);return;}
+  if(action==='attack'){if(!selectedCard){addLog('system','Select an attack card first.');return;}const card=G.players.player.hand.find(c=>c.id===selectedCard.cardId);if(!card)return;if(card.type!=='attack'){addLog('system','That is not an attack card.');return;}pendingAttackCard=card;showAttackTargetModal(card);return;}
+}
+function highlightBuildSlots(card){
+  ['foundation','intelligence','deployment','alignment'].forEach(slot=>{
+    const el=document.getElementById('p-slot-'+slot);el.classList.remove('drop-target');
+    if(slot===card.suit)el.classList.add('drop-target');
+  });addLog('player','Click the '+card.suit+' slot to place '+card.name+'.');
+}
+function handleSlotClick(pname,slot){
+  if(pname!=='player'||G.currentPlayer!=='player')return;if(!selectedCard)return;
+  const card=G.players.player.hand.find(c=>c.id===selectedCard.cardId);if(!card)return;
+  if(card.type==='attack'||card.type==='defend')return;
+  if(card.suit!==slot&&card.type!=='special'){addLog('system','Wrong slot. '+card.name+' belongs in '+card.suit+'.');return;}
+  const existing=G.players.player.buildZone[slot];
+  if(existing&&card.power<=existing.power){addLog('system','Must upgrade to higher Power. Current: '+existing.power+', New: '+card.power);clearSlotHighlights();return;}
+  if(existing)G.discardPile.push(existing);
+  G.players.player.buildZone[slot]=card;G.players.player.hand=G.players.player.hand.filter(c=>c.id!==card.id);
+  G.actionsLeft--;addLog('player','Built '+card.name+' (Power '+card.power+') in '+slot+'.');addLog('player','"'+card.def+'"');
+  clearSlotHighlights();selectedCard=null;document.getElementById('selected-card-name').textContent='No card selected';
+  checkCombos('player');checkBuildZoneComplete('player');checkWin();checkEndTurn();renderAll();
+}
+function checkBuildZoneComplete(p){if(isBuildZoneComplete(p)&&!G.players[p].completedFirstTime){G.players[p].completedFirstTime=true;G.players[p].tokens+=2;addLog('combo',(p==='player'?'You':'AI')+' completed Build Zone! +2 tokens.');}}
+function clearSlotHighlights(){['foundation','intelligence','deployment','alignment'].forEach(s=>document.getElementById('p-slot-'+s)?.classList.remove('drop-target'));}
+function showAttackTargetModal(card){
+  const bz=G.players.ai.buildZone;const slots=['foundation','intelligence','deployment','alignment'];const occupied=slots.filter(s=>bz[s]);
+  if(occupied.length===0){addLog('system','AI has no cards to attack.');pendingAttackCard=null;return;}
+  let html=`<h2 style="color:var(--attack);margin-bottom:8px;">SELECT TARGET</h2><div class="card-detail"><div class="card-detail-name" style="color:${suitColor(card.suit)}">${card.name}</div><div class="card-detail-meta">${suitSymbol(card.suit)} · Power ${card.power}</div><div class="card-detail-def">"${card.def}"</div></div><p>Choose AI slot to attack:</p><div class="target-select">`;
+  for(const slot of slots){const c=bz[slot];if(c){const ok=canAttackSlot(card,c);html+=`<button class="target-slot-btn" ${ok?'':'disabled'} onclick="executeAttack('${slot}')">${suitSymbol(c.suit)} ${c.name} (Power ${c.power}) — ${slot.toUpperCase()}${ok?'':' (Protected)'}</button>`;}}
+  html+=`</div><div style="margin-top:12px;"><button class="btn btn-sm" onclick="closeModal()">CANCEL</button></div>`;showModal(html);
+}
+function canAttackSlot(attackCard,targetCard){if(G.players.ai.immuneRounds>0)return false;if(attackCard.attackEffect==='hallucination')return true;if(attackCard.attackEffect==='remove-low')return targetCard.power<=2;return true;}
+function executeAttack(targetSlot){
+  closeModal();if(!pendingAttackCard)return;const card=pendingAttackCard;pendingAttackCard=null;
+  const target=G.players.ai.buildZone[targetSlot];if(!target){addLog('system','No card there.');return;}
+  const aiDefCard=findAIDefenseCard(card);
+  if(aiDefCard){
+    const result=resolveDefense(aiDefCard,card,'ai');
+    if(result.blocked){
+      addLog('ai','AI defended with '+aiDefCard.name+'!');G.players.ai.hand=G.players.ai.hand.filter(c=>c.id!==aiDefCard.id);
+      if(aiDefCard.specialDefend==='token')G.players.ai.tokens++;
+      if(aiDefCard.specialDefend==='return'){G.players.player.hand.push(card);addLog('ai','AI Safety returned '+card.name+' to your hand.');}else{G.discardPile.push(card);}
+      G.players.player.hand=G.players.player.hand.filter(c=>c.id!==card.id);G.actionsLeft--;renderAll();checkEndTurn();return;
+    }
+  }
+  applyAttack(card,'player',targetSlot);G.players.player.hand=G.players.player.hand.filter(c=>c.id!==card.id);G.actionsLeft--;checkCombos('ai');checkEndTurn();renderAll();
+}
+function applyAttack(card,attacker,targetSlot){
+  const defender=attacker==='player'?'ai':'player';const target=G.players[defender].buildZone[targetSlot];if(!target)return;
+  if(card.attackEffect==='hallucination'){G.players[defender].buildZone[targetSlot]=null;addLog('attack','⚡ HALLUCINATION destroyed '+target.name+'!');showAttackFlash();G.drawPile.splice(Math.floor(Math.random()*G.drawPile.length),0,card);addLog('attack','HALLUCINATION returns to the deck...');}
+  else if(card.attackEffect==='remove-low'){if(target.power<=2){G.players[defender].buildZone[targetSlot]=null;G.discardPile.push(card);addLog('attack','Bias removed '+target.name+' (Power '+target.power+').');}else{addLog('system','Bias only affects Power 1-2.');G.discardPile.push(card);}}
+  else if(card.attackEffect==='discard-highest'){const hand=G.players[defender].hand;if(hand.length>0){const h=hand.reduce((a,b)=>b.power>a.power?b:a);G.players[defender].hand=hand.filter(c=>c.id!==h.id);G.discardPile.push(h);G.discardPile.push(card);addLog('attack','Overfitting forced discard of '+h.name+'.');}else G.discardPile.push(card);}
+  else if(card.attackEffect==='discard-random'){const hand=G.players[defender].hand;if(hand.length>0){const idx=Math.floor(Math.random()*hand.length);const d=hand[idx];G.players[defender].hand=hand.filter((_,i)=>i!==idx);G.discardPile.push(d);G.discardPile.push(card);addLog('attack','Prompt Injection forced random discard.');}else G.discardPile.push(card);}
+  checkCombos(defender);
+}
+function findAIDefenseCard(attackCard){
+  const hand=G.players.ai.hand;const defCards=hand.filter(c=>c.type==='defend');if(defCards.length===0)return null;
+  defCards.sort((a,b)=>b.defendPower-a.defendPower);const dc=defCards[0];
+  if(dc.id==='a-7'&&attackCard.power>2)return null;return dc;
+}
+function resolveDefense(defCard,attackCard){if(defCard.id==='a-4'){const r=attackCard.power-3;return{blocked:r<=0};}if(defCard.id==='a-7')return{blocked:attackCard.power<=2};return{blocked:true};}
+function handleBreakthrough(card){
+  const bz=G.players.player.buildZone;const occupied=Object.entries(bz).filter(([,v])=>v);
+  if(occupied.length===0){addLog('system','No cards in Build Zone.');return;}
+  let html=`<h2 style="color:var(--gold);margin-bottom:12px;">BREAKTHROUGH</h2><p>Choose card to boost (+2 Power):</p><div class="target-select">`;
+  for(const [slot,c] of occupied){html+=`<button class="target-slot-btn" onclick="applyBreakthrough('${slot}','${card.id}')">${suitSymbol(c.suit)} ${c.name} (${c.power} → ${c.power+2})</button>`;}
+  html+=`</div><div style="margin-top:12px;"><button class="btn btn-sm" onclick="closeModal()">CANCEL</button></div>`;showModal(html);
+}
+function applyBreakthrough(slot,cardId){closeModal();G.players.player.breakthroughSlot=G.players.player.buildZone[slot].id;G.players.player.hand=G.players.player.hand.filter(c=>c.id!==cardId);G.actionsLeft--;addLog('player','🔥 BREAKTHROUGH on '+G.players.player.buildZone[slot].name+'!');checkEndTurn();renderAll();}
+function doAITurn(){
+  if(G.currentPlayer!=='ai')return;
+  setTimeout(()=>{
+    addLog('ai','--- AI THINKING ---');
+    if(G.players.ai.immuneRounds>0)G.players.ai.immuneRounds--;
+    for(let a=0;a<2;a++){
+      if(G.drawPile.length>0&&G.players.ai.hand.length<3){dealCard('ai');addLog('ai','AI drew a card.');continue;}
+      if(aiBuild())continue;if(aiAttack())continue;
+      if(G.players.ai.hand.length<9&&G.drawPile.length>0){dealCard('ai');addLog('ai','AI drew a card.');continue;}break;
+    }
+    checkCombos('ai');checkBuildZoneComplete('ai');checkWin();
+    setTimeout(()=>endTurnSwitch(),400);
+  },800);
+}
+function aiBuild(){
+  const hand=G.players.ai.hand;let best=null;
+  for(const card of hand){if(card.type!=='build')continue;const slot=G.players.ai.buildZone[card.suit];if(!slot||card.power>slot.power){if(!best||card.power>best.power)best=card;}}
+  if(best){const slot=G.players.ai.buildZone[best.suit];if(slot)G.discardPile.push(slot);G.players.ai.buildZone[best.suit]=best;G.players.ai.hand=G.players.ai.hand.filter(c=>c.id!==best.id);addLog('ai','AI built '+best.name+' (Power '+best.power+').');addLog('ai','"'+best.def+'"');checkCombos('ai');return true;}return false;
+}
+function aiAttack(){
+  const hand=G.players.ai.hand;const attackCards=hand.filter(c=>c.type==='attack');if(attackCards.length===0)return false;
+  const bz=G.players.player.buildZone;const slots=['foundation','intelligence','deployment','alignment'];const occupied=slots.filter(s=>bz[s]);if(occupied.length===0)return false;
+  if(G.players.player.immuneRounds>0){addLog('ai','AI wanted to attack but your system is immune!');return false;}
+  const target=occupied.reduce((a,b)=>bz[a].power<bz[b].power?a:b);const attackCard=attackCards[0];
+  addLog('ai','AI attacks your '+target+' with '+attackCard.name+'!');
+  const defCard=findPlayerDefenseCard(attackCard);
+  if(defCard){addLog('player','You defend with '+defCard.name+'!');G.players.player.hand=G.players.player.hand.filter(c=>c.id!==defCard.id);if(defCard.specialDefend==='token'){G.players.player.tokens++;addLog('player','+1 token from Ethics Framework.');}if(defCard.specialDefend==='return'){G.players.ai.hand.push(attackCard);addLog('player','AI Safety returned card to AI hand.');}else G.discardPile.push(attackCard);G.players.ai.hand=G.players.ai.hand.filter(c=>c.id!==attackCard.id);return true;}
+  if(G.players.player.tokens>=2&&bz[target]&&bz[target].power>=4){G.players.player.tokens-=2;addLog('player','Spent 2 tokens to block attack!');G.discardPile.push(attackCard);G.players.ai.hand=G.players.ai.hand.filter(c=>c.id!==attackCard.id);return true;}
+  applyAttack(attackCard,'ai',target);G.players.ai.hand=G.players.ai.hand.filter(c=>c.id!==attackCard.id);checkCombos('player');return true;
+}
+function findPlayerDefenseCard(attackCard){const hand=G.players.player.hand;const defCards=hand.filter(c=>c.type==='defend');if(defCards.length===0)return null;defCards.sort((a,b)=>b.defendPower-a.defendPower);const best=defCards[0];const bz=G.players.player.buildZone;const highValue=['foundation','intelligence','deployment','alignment'].filter(s=>bz[s]).some(s=>bz[s].power>=3);if(!highValue&&attackCard.attackEffect!=='hallucination')return null;return best;}
+function checkEndTurn(){if(G.actionsLeft<=0)addLog('system','Actions used. Click END TURN.');}
+function endTurn(){if(G.currentPlayer!=='player')return;if(G.players.player.immuneRounds>0)G.players.player.immuneRounds--;if(G.survivalRound&&G.survivalTriggeredBy){checkFinalWin();return;}endTurnSwitch();}
+function endTurnSwitch(){
+  if(G.currentPlayer==='player'){G.currentPlayer='ai';G.actionsLeft=2;renderAll();addLog('ai','--- AI TURN ---');doAITurn();}
+  else{G.currentPlayer='player';G.actionsLeft=2;renderAll();addLog('player','--- YOUR TURN ---');if(G.survivalRound)addLog('system','⚠ SURVIVAL ROUND: Survive to win!');}
+}
+function checkWin(){
+  if(G.gameOver)return;
+  for(const p of['player','ai']){
+    if(isBuildZoneComplete(p)&&getPowerScore(p)>=getWinThreshold(p)){
+      if(G.survivalRound&&G.survivalTriggeredBy===p){checkFinalWin();return;}
+      if(!G.survivalRound){G.survivalRound=true;G.survivalTriggeredBy=p;const who=p==='player'?'YOU':'AI';addLog('system','⚠ '+who+' reached Power '+getPowerScore(p)+'! SURVIVAL ROUND!');document.getElementById('survival-notice').style.display='flex';}
+    }
+  }
+}
+function checkFinalWin(){const p=G.survivalTriggeredBy;if(!p)return;if(isBuildZoneComplete(p)&&getPowerScore(p)>=getWinThreshold(p)){G.gameOver=true;G.winner=p;showWinScreen(p);}else{G.survivalRound=false;G.survivalTriggeredBy=null;document.getElementById('survival-notice').style.display='none';addLog('system','System dismantled during Survival Round. Game continues.');}}
+function renderAll(){
+  renderBuildZone('player');renderBuildZone('ai');renderHand();renderAIHandBack();renderTokens('player');renderTokens('ai');
+  document.getElementById('p-score').textContent=getPowerScore('player');document.getElementById('ai-score').textContent=getPowerScore('ai');
+  document.getElementById('deck-count').textContent=G.drawPile.length;document.getElementById('deck-count-s').textContent=G.drawPile.length;document.getElementById('discard-count').textContent=G.discardPile.length;
+  document.getElementById('actions-left').textContent=G.actionsLeft;document.getElementById('p-tokens-s').textContent=G.players.player.tokens;document.getElementById('ai-tokens-s').textContent=G.players.ai.tokens;
+  document.getElementById('turn-info').textContent='TURN '+G.turn+' · '+(G.currentPlayer==='player'?'YOUR TURN':'AI TURN');
+  const isPlayer=G.currentPlayer==='player';['btn-draw','btn-build','btn-attack'].forEach(id=>document.getElementById(id).disabled=!isPlayer||G.actionsLeft<=0);
+}
+function renderBuildZone(p){
+  const suits=['foundation','intelligence','deployment','alignment'];const bz=G.players[p].buildZone;const prefix=p==='player'?'p':'ai';
+  suits.forEach(slot=>{
+    const slotEl=document.getElementById(prefix+'-slot-'+slot);const emptyEl=document.getElementById(prefix+'-empty-'+slot);const card=bz[slot];
+    const old=slotEl.querySelector('.slot-card');if(old)old.remove();const oldC=slotEl.querySelector('.combo-active');if(oldC)oldC.remove();
+    if(card){emptyEl.style.display='none';const pw=card.power+(G.players[p].breakthroughSlot===card.id?2:0);const div=document.createElement('div');div.className='slot-card';div.innerHTML=`<div class="slot-card-name" style="color:${suitColor(card.suit)}">${card.name}</div><div class="slot-card-power" style="color:${suitColor(card.suit)}">${pw}</div><div class="slot-card-type">${card.era}</div>${G.players[p].breakthroughSlot===card.id?'<div class="breakthrough-badge">+BREAKTHROUGH</div>':''}`;slotEl.appendChild(div);
+      const comboCards=COMBOS.filter(c=>G.players[p].activeComboNames.includes(c.label)).flatMap(c=>c.cards);if(comboCards.includes(card.name)){const dot=document.createElement('div');dot.className='combo-active';slotEl.appendChild(dot);}}
+    else emptyEl.style.display='block';
+  });
+}
+function renderHand(){const el=document.getElementById('player-hand');el.innerHTML='';G.players.player.hand.forEach(card=>{const div=document.createElement('div');div.className='card '+card.suit+(selectedCard&&selectedCard.cardId===card.id?' selected':'');div.onclick=()=>selectCard(card.id,'player');div.innerHTML=`<div class="card-top"><span class="card-suit">${suitSymbol(card.suit)}</span><span class="card-power">${card.power}</span></div><div class="card-name">${card.name}</div><div class="card-type-badge type-${card.type}">${card.type.toUpperCase()}</div><div class="card-def">${card.def}</div>`;el.appendChild(div);});}
+function renderAIHandBack(){const el=document.getElementById('ai-hand-back');el.innerHTML='';G.players.ai.hand.forEach(()=>{const div=document.createElement('div');div.style.cssText='width:18px;height:26px;border:1px solid var(--border2);background:var(--surface2);';el.appendChild(div);});const count=document.createElement('span');count.style.cssText='font-family:Space Mono,monospace;font-size:9px;color:var(--text3);margin-left:4px;';count.textContent=G.players.ai.hand.length+' cards';el.appendChild(count);}
+function renderTokens(p){const el=document.getElementById((p==='player'?'p':'ai')+'-tokens');el.innerHTML='';const max=Math.max(G.players[p].tokens,4);for(let i=0;i<max;i++){const div=document.createElement('div');div.className='token'+(i>=G.players[p].tokens?' empty':'');el.appendChild(div);}if(G.players[p].tokens===0){const warn=document.createElement('div');warn.style.cssText='font-family:Space Mono,monospace;font-size:8px;color:var(--attack);letter-spacing:1px;';warn.textContent='CRITICAL';el.appendChild(warn);}}
+function addLog(type,msg){const el=document.getElementById('log');const div=document.createElement('div');div.className='log-entry '+type;div.textContent=msg;el.appendChild(div);el.scrollTop=el.scrollHeight;}
+function suitSymbol(suit){return{foundation:'♠',intelligence:'♥',deployment:'♦',alignment:'♣',special:'★'}[suit]||'?';}
+function suitColor(suit){return{foundation:'var(--foundation)',intelligence:'var(--intel)',deployment:'var(--deploy)',alignment:'var(--align)',special:'var(--special)'}[suit]||'var(--text)';}
+function showModal(html){document.getElementById('modal-content').innerHTML=html;document.getElementById('modal-overlay').classList.add('active');}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('active');pendingAttackCard=null;}
+function showComboFlash(label){const el=document.getElementById('combo-flash');el.textContent='⚡ COMBO: '+label;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2000);}
+function showAttackFlash(){const el=document.getElementById('attack-flash');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500);}
+function showWinScreen(winner){document.getElementById('win-title').textContent=winner==='player'?'VICTORY':'DEFEAT';document.getElementById('win-title').style.color=winner==='player'?'var(--gold)':'var(--attack)';document.getElementById('win-sub').textContent=winner==='player'?'Your AI system achieved operational superiority.':'The AI defeated your system. Try again.';document.getElementById('win-turns').textContent=G.turn;document.getElementById('win-power').textContent=getPowerScore(winner);document.getElementById('win-combos').textContent=G.totalCombosHit;showScreen('win-screen');}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function startGame(mode){showScreen('game-screen');selectedCard=null;pendingAttackCard=null;initGame(mode);}
+function goToTitle(){showScreen('title-screen');}
+function showRules(){document.getElementById('rules-overlay').classList.add('active');}
+function closeRules(){document.getElementById('rules-overlay').classList.remove('active');}
+</script>
+</body>
+</html>
