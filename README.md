@@ -2,7 +2,7 @@
 
 A competitive card game where you race to build a complete AI system before your opponent dismantles it.
 
-**Play it live:** [https://ozgurgrbz.github.io/neural-game](https://YOUR-USERNAME.github.io/neural-game)
+**Play it live:** [https://ozgurgrbz.github.io/neural](https://YOUR-USERNAME.github.io/neural)
 
 ## How to Play
 
